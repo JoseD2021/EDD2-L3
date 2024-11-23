@@ -62,7 +62,7 @@ def handle_client(client_socket: "socket.socket", client_address: "socket._RetAd
             if not data:
                 remove_client(client_socket)
                 break
-            
+            print(f"{op} +  {t} + {data}")
             message_to_send = bytes(f"{op.decode('utf-8')},{t.decode('utf-8')},{data.decode('utf-8')}", 'utf-8')
             broadcastWorker(message_to_send, client_socket)
     except Exception as ex:
