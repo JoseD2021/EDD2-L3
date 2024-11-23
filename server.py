@@ -40,7 +40,7 @@ def broadcastClient(message: bytes, client_socket: "socket.socket") -> None:
 def handle_client(client_socket: "socket.socket", client_address: "socket._RetAddress") -> None:
     try:
         
-        client_socket.sendall(b'Seleccione un metodo de ordenamiento\n1) Mergesort\n2) heapsort\n3 Quicksort')
+        client_socket.sendall(b'Seleccione un metodo de ordenamiento\n1) Mergesort\n2) Heapsort\n3) Quicksort')
         
         while True:
             op = client_socket.recv(2048)
@@ -62,7 +62,7 @@ def handle_client(client_socket: "socket.socket", client_address: "socket._RetAd
             if not data:
                 remove_client(client_socket)
                 break
-            print(f"{op} +  {t} + {data}")
+            print(f"{op.decode('utf-8')} +  {t.decode('utf-8')} + {data.decode('utf-8')}")
             message_to_send = bytes(f"{op.decode('utf-8')},{t.decode('utf-8')},{data.decode('utf-8')}", 'utf-8')
             broadcastWorker(message_to_send, client_socket)
     except Exception as ex:
