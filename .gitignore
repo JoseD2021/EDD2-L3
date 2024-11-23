@@ -162,4 +162,3 @@ cython_debug/
 #.idea/
 AVLTree.png
 Map.html
-config.py
