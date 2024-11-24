@@ -13,18 +13,7 @@ EXIT_MESSAGE = CONFIG_PARAMS['EXIT_MESSAGE']
 initialTime = 0
 dataQueue = queue.Queue()
 
-# Utilidad para verificar límite de tiempo
-def check_time_limit(start_time: float, t: int, sorted_flag: list) -> bool:  # **# Cambio**
-    """Verifica si el tiempo límite ha sido excedido."""
-    if time.time() - start_time > t:
-        sorted_flag[0] = 0
-        return True
-    return False
-
-
 def controller (data: list):
-    # global initialTime
-    # initialTime = time.time()
     op = int(data[0])
     t = int(data[1])
     if op == 1:
@@ -38,38 +27,8 @@ def controller (data: list):
     
     dataQueue.put(newData)
 
-
-def mergeSort(data: list, t: int, start_time: float, sorted_flag: list) -> list:  # **# Cambio**
-    if len(data) <= 1:
-        return data
-
-    if check_time_limit(start_time, t, sorted_flag):  # **# Cambio**
-        return data
-
-    mid = len(data) // 2
-    leftHalf = mergeSort(data[:mid], t, start_time, sorted_flag)  # **# Cambio**
-    rightHalf = mergeSort(data[mid:], t, start_time, sorted_flag)  # **# Cambio**
-
-    return merge(leftHalf, rightHalf)
-
-
-def merge(left, right) -> list:
-    result = []
-    i = j = 0
-
-    while i < len(left) and j < len(right):
-        if left[i] < right[j]:
-            result.append(left[i])
-            i += 1
-        else:
-            result.append(right[j])
-            j += 1
-
-    result.extend(left[i:])
-    result.extend(right[j:])
-
-    return result
-
+def mergeSort(arr, t):
+    pass
 
 def heapify_with_stack(arr, n, i, heapify_stack):
     while heapify_stack:

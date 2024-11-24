@@ -41,55 +41,48 @@ def broadcastClient(message: bytes, client_socket: "socket.socket") -> None:
 
 # Handle Client Method (Clients Secondary Threads)
 def handle_client(client_socket: "socket.socket", client_address: "socket._RetAddress") -> None:
-    # try:
-        
+    try:
         client_socket.sendall(b'Seleccione un metodo de ordenamiento\n1) Mergesort\n2) Heapsort\n3) Quicksort')
-        
         while True:
-            # global terminado
-            # if terminado:
-                op = client_socket.recv(2048).decode('utf-8')
-                op = int(op)
-                if not op:
-                    remove_client(client_socket)
-                    break
-                # print(f'<{client_address[0]}>', message.decode('utf-8'))
+            op = client_socket.recv(2048).decode('utf-8')
+            op = int(op)
+            
+            if not op:
+                remove_client(client_socket)
+                break
 
-                client_socket.sendall(b'Ingrese el tiempo de ejecucion en segundos')
-                t = int(client_socket.recv(2048).decode('utf-8'))
+            client_socket.sendall(b'Ingrese el tiempo de ejecucion en segundos')
+            t = int(client_socket.recv(2048).decode('utf-8'))
 
-                if not t:
-                    remove_client(client_socket)
-                    break
-                
-                client_socket.sendall(b'Escriba "si" para enviar los datos')
-                data = client_socket.recv(30000000) # 12288000
+            if not t:
+                remove_client(client_socket)
+                break
+            
+            client_socket.sendall(b'Escriba "si" para enviar los datos')
+            data = client_socket.recv(30000000) # 12288000
 
-                if not data:
-                    remove_client(client_socket)
-                    break
-                data = pickle.loads(data)
-                client_socket.sendall(b'Por favor espere, estamos ordenando el vector')
+            if not data:
+                remove_client(client_socket)
+                break
 
+            data = pickle.loads(data)
+            client_socket.sendall(b'Por favor espere, estamos ordenando el vector')
 
-                # print(f"{op.decode('utf-8')} +  {t.decode('utf-8')} + {data}")
-                # message_to_send = bytes(f"{op.decode('utf-8')},{t.decode('utf-8')},{data}", 'utf-8')
-                message_to_send = pickle.dumps([op,t, [data,t, None]])
-                broadcastWorker(message_to_send)
+            message_to_send = pickle.dumps([op,t, [data,t, None]])
+            broadcastWorker(message_to_send)
+            message_to_send_user = resultados.get()
 
-                message_to_send_user = resultados.get()
-                #print("Resultados para enviar: ",message_to_send_user)
-                client_socket.sendall(message_to_send_user)
-                client_socket.sendall(b'\nSeleccione un metodo de ordenamiento\n1) Mergesort\n2) Heapsort\n3) Quicksort')
+            client_socket.sendall(message_to_send_user)
+            client_socket.sendall(b'\nSeleccione un metodo de ordenamiento\n1) Mergesort\n2) Heapsort\n3) Quicksort')
 
-    # except Exception as ex:
-    #     print(f'Error on client {client_address[0]}: {ex}')
-    #     remove_client(client_socket)
-    # finally:
-    #     client_socket.close()
+    except Exception as ex:
+        print(f'Error on client {client_address[0]}: {ex}')
+        remove_client(client_socket)
+    finally:
+        client_socket.close()
 
 def handle_worker(client_socket: "socket.socket", client_address: "socket._RetAddress") -> None:
-    #try:
+    try:
         while True:
             message = client_socket.recv(30000000) # 12288000
             if not message:
@@ -105,11 +98,11 @@ def handle_worker(client_socket: "socket.socket", client_address: "socket._RetAd
                 print("No se resolvio")
                 message_to_send = pickle.dumps(message)
                 broadcastWorker(message_to_send)
-    #except Exception as ex:
-    #    print(f'Error on client {client_address[0]}: {ex}')
-    #    remove_client(client_socket)
-    #finally:
-    #    client_socket.close()
+    except Exception as ex:
+        print(f'Error on client {client_address[0]}: {ex}')
+        remove_client(client_socket)
+    finally:
+        client_socket.close()
 
 # Start Server Method (Main Thread)
 def start_server() -> None:
