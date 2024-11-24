@@ -30,7 +30,7 @@ def controller (data: list):
     if op == 1:
         newData = mergeSort(data[2], t)
     elif op == 2:
-        newData = heap_sort_with_state(data[2], t)
+        newData = heap_sort_with_state(data[2][0], t, data[2][2])
     elif op == 3:
         newData = quickSort(data[2][0], t, data[2][2]) # quicksort devuelve lista bool stack, requiere array t y stack
     #print(f"New data: {newData}")
@@ -92,7 +92,7 @@ def heapify_with_stack(arr, n, i, heapify_stack):
             break
 
         # Pausar brevemente para observar el proceso
-        time.sleep(.2)
+        time.sleep(.001)
 
     return heapify_stack
 
@@ -156,7 +156,7 @@ def heap_sort_with_state(arr, max_time, execution_state=None):
             heapify_stack = heapify_with_stack(arr, sort_index + 1, 0, heapify_stack)
 
             # Pausa para simular procesamiento
-            time.sleep(.2)
+            time.sleep(.001)
 
     # Verificar si el arreglo está completamente ordenado
     is_sorted = all(arr[i] <= arr[i + 1] for i in range(len(arr) - 1))
@@ -204,7 +204,7 @@ def receive_messages(client_socket: "socket.socket") -> None:
             if not message:
                 break
             data = pickle.loads(message)
-            # print(f"Data: {data}")
+            #print(f"Data: {data}")
             controller(data)
             # print("informacion recibida", data)
             
