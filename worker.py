@@ -28,10 +28,8 @@ def controller (data: list):
     dataQueue.put(newData)
 
 def mergeSort(arr, t, args = [1,0]):
-
-    width=args[0]
-    i=args[1]
-     
+    width, i = 1, 0
+    if args: width, i = args[0], args[1]
     start_time = time.time()
     n = len(arr)
     while width < n:
@@ -51,12 +49,10 @@ def mergeSort(arr, t, args = [1,0]):
             merged.extend(right[r:])
             arr[i:i + 2 * width] = merged
             i += 2 * width
-            time.sleep(1)
             if time.time() - start_time > t:
                 return arr, False, [width, i]
         width *= 2
         i = 0
-        time.sleep(1)
     return arr, True, [width, i]
 
 def heapify_with_stack(arr, n, i, heapify_stack):
