@@ -11,7 +11,6 @@ SERVER_PORT = CONFIG_PARAMS['SERVER_PORT']
 EXIT_MESSAGE = CONFIG_PARAMS['EXIT_MESSAGE']
 
 initialTime = 0
-sorted = 1
 dataQueue = queue.Queue()
 
 # Utilidad para verificar límite de tiempo
@@ -33,10 +32,10 @@ def controller (data: list):
     elif op == 2:
         newData = heapSort(data[2], t)
     elif op == 3:
-        newData = quickSort(data[2], t)
-
-    newData = [op, t, sorted, newData]
-    dataQueue.put(data)
+        newData = quickSort(data[2][0], t, data[2][2]) # quicksort devuelve lista bool stack, requiere array t y stack
+    
+    newData = [op, t, newData]
+    dataQueue.put(newData)
 
 
 def mergeSort(data: list, t: int, start_time: float, sorted_flag: list) -> list:  # **# Cambio**
@@ -108,23 +107,37 @@ def heapSort(data: list, t: int, start_time: float, sorted_flag: list) -> list: 
     return data
 
 
-def quickSort(data: list, t: int, start_time: float, sorted_flag: list) -> list:  # **# Cambio**
-    if len(data) <= 1:
-        return data
+def quickSort(arr, t, stack=None):
+    start_time = time.time()
+    if stack is None:
+        stack = [(0, len(arr) - 1)]
+    is_sorted = True
 
-    if check_time_limit(start_time, t, sorted_flag):  # **# Cambio**
-        return data
+    while stack:
+        start, end = stack.pop()
+        if start >= end:
+            continue
 
-    pivot = data[len(data) // 2]
-    left = [x for x in data if x < pivot]
-    middle = [x for x in data if x == pivot]
-    right = [x for x in data if x > pivot]
+        pivot = arr[end]
+        low = start
 
-    # Aplicar quickSort recursivamente
-    sortedLeft = quickSort(left, t, start_time, sorted_flag)  # **# Cambio**
-    sortedRight = quickSort(right, t, start_time, sorted_flag)  # **# Cambio**
+        for i in range(start, end):
+            if arr[i] < pivot:
+                arr[i], arr[low] = arr[low], arr[i]
+                low += 1
 
-    return sortedLeft + middle + sortedRight
+        arr[low], arr[end] = arr[end], arr[low]
+
+        if time.time() - start_time > t:
+            stack.append((start, low - 1))
+            stack.append((low + 1, end))
+            is_sorted = False
+            break
+
+        stack.append((start, low - 1))
+        stack.append((low + 1, end))
+        # time.sleep(.2)
+    return [arr, is_sorted, stack]
 
 # Receive Message Method (Secondary Thread)
 def receive_messages(client_socket: "socket.socket") -> None:

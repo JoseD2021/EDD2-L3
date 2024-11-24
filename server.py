@@ -72,7 +72,7 @@ def handle_client(client_socket: "socket.socket", client_address: "socket._RetAd
 
                 print(f"{op.decode('utf-8')} +  {t.decode('utf-8')} + {data}")
                 # message_to_send = bytes(f"{op.decode('utf-8')},{t.decode('utf-8')},{data}", 'utf-8')
-                message_to_send = pickle.dumps([op.decode('utf-8'),t.decode('utf-8'), data])
+                message_to_send = pickle.dumps([op.decode('utf-8'),t.decode('utf-8'), [data,t.decode('utf-8'), None]])
                 broadcastWorker(message_to_send, client_socket)
                 terminado = False
     except Exception as ex:
@@ -90,11 +90,12 @@ def handle_worker(client_socket: "socket.socket", client_address: "socket._RetAd
                 break
             message = pickle.loads(message)
             
-            if message[2] == 1:
-                message_to_send = f"Tiempo que tomo resolverlo: 0, vector ordenado: {message[3]}"
+            if message[2][1] == True:
+                message_to_send = f"Tiempo que tomo resolverlo: 0, vector ordenado: {message[0]}"
                 broadcastClient(message_to_send, client_socket)
             else:
-                broadcastWorker(message, client_socket)
+                message_to_send = pickle.dumps(message)
+                broadcastWorker(message_to_send, client_socket)
     except Exception as ex:
         print(f'Error on client {client_address[0]}: {ex}')
         remove_client(client_socket)
