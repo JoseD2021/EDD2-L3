@@ -2,6 +2,7 @@ import socket
 import threading
 from config import CONFIG_PARAMS
 import time
+import pickle
 
 # Configuration Parameters
 SERVER_IP_ADDRESS = CONFIG_PARAMS['SERVER_IP_ADDRESS']
@@ -11,20 +12,19 @@ EXIT_MESSAGE = CONFIG_PARAMS['EXIT_MESSAGE']
 initialTime = 0
 sorted = 1
 
-def controller (data: str):
+def controller (data: list):
     global initialTime
     initialTime = time.time()
-    data = data.split(",")
-    op = data.pop(0)
-    t = data.pop(0)
+    op = int(data[0])
+    t = int(data[1])
     if op == 1:
-        newData = mergeSort(data, t)
+        newData = mergeSort(data[2], t)
     elif op == 2:
-        newData = heapSort(data, t)
+        newData = heapSort(data[2], t)
     elif op == 3:
-        newData = quickSort(data, t)
+        newData = quickSort(data[2], t)
 
-    newData = f"{sorted},"
+    newData = [op, t, sorted, newData]
 
 def mergeSort(data: str, t:int) -> list:
     global initialTime
@@ -74,11 +74,11 @@ def quickSort(data, t:int):
 def receive_messages(client_socket: "socket.socket") -> None:
     try:
         while True:
-            message = client_socket.recv(2048)
+            message = client_socket.recv(12288000)
             if not message:
                 break
             print('\r', end = '')
-            data = message.decode('utf-8')
+            data = pickle.loads(message)
             controller(data)
             #print(data)
 

@@ -2,6 +2,7 @@ import socket
 import threading
 from config import CONFIG_PARAMS
 from typing import List
+import pickle
 
 # Configuration Parameters
 IP_ADDRESS = CONFIG_PARAMS['SERVER_IP_ADDRESS']
@@ -9,6 +10,7 @@ PORT = CONFIG_PARAMS['SERVER_PORT']
 MAX_CLIENTS = CONFIG_PARAMS['SERVER_MAX_CLIENTS']
 LIST_OF_CLIENTS: List["socket.socket"] = []
 LIST_OF_WORKERS: List["socket.socket"] = []
+terminado = True
 
 # Remove Client from List of Clients
 def remove_client(client_socket: "socket.socket") -> None:
@@ -43,28 +45,35 @@ def handle_client(client_socket: "socket.socket", client_address: "socket._RetAd
         client_socket.sendall(b'Seleccione un metodo de ordenamiento\n1) Mergesort\n2) Heapsort\n3) Quicksort')
         
         while True:
-            op = client_socket.recv(2048)
-            if not op:
-                remove_client(client_socket)
-                break
-            # print(f'<{client_address[0]}>', message.decode('utf-8'))
-            
-            client_socket.sendall(b'Ingrese el tiempo de ejecucion en segundos')
-            t = client_socket.recv(2048) 
-            
-            if not t:
-                remove_client(client_socket)
-                break
-            
-            client_socket.sendall(b'Escriba "si" para enviar los datos')
-            data = client_socket.recv(2048) # 12288000
-            
-            if not data:
-                remove_client(client_socket)
-                break
-            print(f"{op.decode('utf-8')} +  {t.decode('utf-8')} + {data.decode('utf-8')}")
-            message_to_send = bytes(f"{op.decode('utf-8')},{t.decode('utf-8')},{data.decode('utf-8')}", 'utf-8')
-            broadcastWorker(message_to_send, client_socket)
+            if terminado:
+                op = client_socket.recv(2048)
+                if not op:
+                    remove_client(client_socket)
+                    break
+                # print(f'<{client_address[0]}>', message.decode('utf-8'))
+
+                client_socket.sendall(b'Ingrese el tiempo de ejecucion en segundos')
+                t = client_socket.recv(2048) 
+
+                if not t:
+                    remove_client(client_socket)
+                    break
+                
+                client_socket.sendall(b'Escriba "si" para enviar los datos')
+                data = client_socket.recv(12288000) # 12288000
+
+                if not data:
+                    remove_client(client_socket)
+                    break
+                data = pickle.loads(data)
+                client_socket.sendall(b'Por favor espere, estamos ordenando el vector')
+
+
+                print(f"{op.decode('utf-8')} +  {t.decode('utf-8')} + {data}")
+                # message_to_send = bytes(f"{op.decode('utf-8')},{t.decode('utf-8')},{data}", 'utf-8')
+                message_to_send = pickle.dumps([op.decode('utf-8'),t.decode('utf-8'), data])
+                broadcastWorker(message_to_send, client_socket)
+                terminado = False
     except Exception as ex:
         print(f'Error on client {client_address[0]}: {ex}')
         remove_client(client_socket)
@@ -73,15 +82,18 @@ def handle_client(client_socket: "socket.socket", client_address: "socket._RetAd
 
 def handle_worker(client_socket: "socket.socket", client_address: "socket._RetAddress") -> None:
     try:
-        
         while True:
-            message = client_socket.recv(2048) # 12288000
+            message = client_socket.recv(12288000) # 12288000
             if not message:
                 remove_client(client_socket)
                 break
             # print(f'<{client_address[0]}>', message.decode('utf-8')) 
-            message_to_send = bytes(f"{message.decode('utf-8')}", 'utf-8')
-            broadcastClient(message_to_send, client_socket)
+            # message_to_send = bytes(f"{message.decode('utf-8')}", 'utf-8')
+            message_to_send = pickle.loads(message)
+            if message_to_send[1] == 1:
+                broadcastClient(message_to_send, client_socket)
+            else:
+                broadcastWorker(message_to_send, client_socket)
     except Exception as ex:
         print(f'Error on client {client_address[0]}: {ex}')
         remove_client(client_socket)
