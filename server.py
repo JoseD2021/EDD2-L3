@@ -88,13 +88,13 @@ def handle_worker(client_socket: "socket.socket", client_address: "socket._RetAd
             if not message:
                 remove_client(client_socket)
                 break
-            # print(f'<{client_address[0]}>', message.decode('utf-8')) 
-            # message_to_send = bytes(f"{message.decode('utf-8')}", 'utf-8')
-            message_to_send = pickle.loads(message)
-            if message_to_send[1] == 1:
+            message = pickle.loads(message)
+            
+            if message[2] == 1:
+                message_to_send = f"Tiempo que tomo resolverlo: 0, vector ordenado: {message[3]}"
                 broadcastClient(message_to_send, client_socket)
             else:
-                broadcastWorker(message_to_send, client_socket)
+                broadcastWorker(message, client_socket)
     except Exception as ex:
         print(f'Error on client {client_address[0]}: {ex}')
         remove_client(client_socket)

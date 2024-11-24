@@ -1,14 +1,18 @@
 import socket
 import threading
-import time
 from config import CONFIG_PARAMS
+import time
+import pickle
+import queue
 
 # Configuration Parameters
 SERVER_IP_ADDRESS = CONFIG_PARAMS['SERVER_IP_ADDRESS']
 SERVER_PORT = CONFIG_PARAMS['SERVER_PORT']
 EXIT_MESSAGE = CONFIG_PARAMS['EXIT_MESSAGE']
 
-lock = threading.Lock()  # Para proteger el acceso a las variables globales
+initialTime = 0
+sorted = 1
+dataQueue = queue.Queue()
 
 # Utilidad para verificar límite de tiempo
 def check_time_limit(start_time: float, t: int, sorted_flag: list) -> bool:  # **# Cambio**
@@ -19,44 +23,20 @@ def check_time_limit(start_time: float, t: int, sorted_flag: list) -> bool:  # *
     return False
 
 
-def controller(data: str):
-    global lock
+def controller (data: list):
+    global initialTime
+    initialTime = time.time()
+    op = int(data[0])
+    t = int(data[1])
+    if op == 1:
+        newData = mergeSort(data[2], t)
+    elif op == 2:
+        newData = heapSort(data[2], t)
+    elif op == 3:
+        newData = quickSort(data[2], t)
 
-    with lock:
-        try:
-            # Inicializar variables locales
-            start_time = time.time()  # **# Cambio** (Eliminado uso de variable global)
-            is_sorted = [1]  # Usar lista para referencia mutable
-
-            # Parsear y validar entrada
-            data = data.split(",")
-            if len(data) < 2:
-                return "0,Error: Insufficient data"
-
-            try:
-                op = int(data.pop(0))
-                t = int(data.pop(0))
-                if t <= 0:
-                    return "0,Error: Invalid time limit"
-                array = list(map(int, data))
-            except ValueError:
-                return "0,Error: Non-numeric data"
-
-            # Seleccionar algoritmo
-            if op == 1:
-                result = mergeSort(array, t, start_time, is_sorted)  # **# Cambio**
-            elif op == 2:
-                result = heapSort(array, t, start_time, is_sorted)  # **# Cambio**
-            elif op == 3:
-                result = quickSort(array, t, start_time, is_sorted)  # **# Cambio**
-            else:
-                return "0,Error: Invalid operation"
-
-            # Construir respuesta
-            return f"{is_sorted[0]}," + ",".join(map(str, result))
-
-        except Exception as e:
-            return f"0,Error: {str(e)}"
+    newData = [op, t, sorted, newData]
+    dataQueue.put(data)
 
 
 def mergeSort(data: list, t: int, start_time: float, sorted_flag: list) -> list:  # **# Cambio**
@@ -146,19 +126,18 @@ def quickSort(data: list, t: int, start_time: float, sorted_flag: list) -> list:
 
     return sortedLeft + middle + sortedRight
 
-
 # Receive Message Method (Secondary Thread)
 def receive_messages(client_socket: "socket.socket") -> None:
     try:
         while True:
-            message = client_socket.recv(2048)
+            message = client_socket.recv(12288000)
             if not message:
                 break
+            data = pickle.loads(message)
+            controller(data)
+            #print(data)
 
-            data = message.decode('utf-8')
-            response = controller(data)
-            print(f"Server response: {response}")  # **# Cambio**
-
+            #print('<You> ', end = '', flush = True)
     except Exception as ex:
         print(f'Error receiving messages: {ex}')
     finally:
@@ -170,24 +149,17 @@ def start_client() -> None:
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((SERVER_IP_ADDRESS, SERVER_PORT))
 
-    receive_thread = threading.Thread(target=receive_messages, args=(client_socket,))
+    receive_thread = threading.Thread(target = receive_messages, args = (client_socket,))
     receive_thread.daemon = True
     receive_thread.start()
 
     try:
         while True:
-            message = input('<You> ')
-            if message.lower() == EXIT_MESSAGE:
-                print('Closing Connection...')
-                client_socket.close()
-                break
-
-            client_socket.sendall(bytes(message, 'utf-8'))
+            data = dataQueue.get()
+            client_socket.sendall(pickle.dumps(data))
     except Exception as ex:
         print(f'Error sending messages: {ex}')
-    finally:
-        if not client_socket._closed:  # **# Cambio**
-            client_socket.close()
+        client_socket.close()
 
 
 if __name__ == '__main__':
