@@ -33,7 +33,7 @@ def controller (data: list):
         newData = heapSort(data[2], t)
     elif op == 3:
         newData = quickSort(data[2][0], t, data[2][2]) # quicksort devuelve lista bool stack, requiere array t y stack
-    print(f"New data: {newData}")
+    #print(f"New data: {newData}")
     newData = [op, t, newData]
     
     dataQueue.put(newData)
@@ -138,20 +138,20 @@ def quickSort(arr, t, stack=None):
 
         stack.append((start, low - 1))
         stack.append((low + 1, end))
-        time.sleep(.5)
+        time.sleep(.001)
     return [arr, is_sorted, stack]
 
 # Receive Message Method (Secondary Thread)
 def receive_messages(client_socket: "socket.socket") -> None:
     try:
         while True:
-            message = client_socket.recv(12288000)
+            message = client_socket.recv(30000000)
             if not message:
                 break
             data = pickle.loads(message)
-            print(f"Data: {data}")
+            # print(f"Data: {data}")
             controller(data)
-            print("informacion recibida", data)
+            # print("informacion recibida", data)
             
             #print('<You> ', end = '', flush = True)
     except Exception as ex:
@@ -171,9 +171,9 @@ def start_client() -> None:
 
     try:
         while True:
-            print("Esperando cola")
+            print("\n\nEsperando cola")
             data = dataQueue.get()
-            print("Cola resibida")
+            print("Cola recibida")
             client_socket.sendall(pickle.dumps(data))
             print("Enviado a server")
     except Exception as ex:
