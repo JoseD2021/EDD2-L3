@@ -45,6 +45,7 @@ def handle_client(client_socket: "socket.socket", client_address: "socket._RetAd
         client_socket.sendall(b'Seleccione un metodo de ordenamiento\n1) Mergesort\n2) Heapsort\n3) Quicksort')
         
         while True:
+            global terminado
             if terminado:
                 op = client_socket.recv(2048)
                 if not op:
