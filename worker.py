@@ -30,7 +30,7 @@ def controller (data: list):
     if op == 1:
         newData = mergeSort(data[2], t)
     elif op == 2:
-        newData = heapSort(data[2], t)
+        newData = heap_sort_with_state(data[2], t)
     elif op == 3:
         newData = quickSort(data[2][0], t, data[2][2]) # quicksort devuelve lista bool stack, requiere array t y stack
     #print(f"New data: {newData}")
@@ -71,41 +71,96 @@ def merge(left, right) -> list:
     return result
 
 
-def heapSort(data: list, t: int, start_time: float, sorted_flag: list) -> list:  # **# Cambio**
+def heapify_with_stack(arr, n, i, heapify_stack):
+    while heapify_stack:
+        node, state = heapify_stack.pop()
 
-    def heapify(arr, n, i):
-        if check_time_limit(start_time, t, sorted_flag):  # **# Cambio**
-            return
+        if state == 0:  # Comparar y determinar el mayor
+            largest = node
+            left = 2 * node + 1
+            right = 2 * node + 2
 
-        largest = i
-        left = 2 * i + 1
-        right = 2 * i + 2
+            if left < n and arr[left] > arr[largest]:
+                largest = left
+            if right < n and arr[right] > arr[largest]:
+                largest = right
 
-        if left < n and arr[left] > arr[largest]:
-            largest = left
-        if right < n and arr[right] > arr[largest]:
-            largest = right
+            if largest != node:
+                arr[node], arr[largest] = arr[largest], arr[node]
+                heapify_stack.append((largest, 0))  # Continuar con el subárbol
+        else:
+            break
 
-        if largest != i:
-            arr[i], arr[largest] = arr[largest], arr[i]
-            heapify(arr, n, largest)
+        # Pausar brevemente para observar el proceso
+        time.sleep(.2)
 
-    n = len(data)
+    return heapify_stack
 
-    # Construir max-heap
-    for i in range(n // 2 - 1, -1, -1):
-        heapify(data, n, i)
-        if sorted_flag[0] == 0:
-            return data
+def heap_sort_with_state(arr, max_time, execution_state=None):
+    start_time = time.time()
+    n = len(arr)
 
-    # Extraer elementos del heap
-    for i in range(n - 1, 0, -1):
-        data[i], data[0] = data[0], data[i]
-        heapify(data, i, 0)
-        if sorted_flag[0] == 0:
-            return data
+    # Inicializar estado si no se proporciona
+    if execution_state is None:
+        execution_state = {
+            "phase": "build_heap",
+            "build_index": n // 2 - 1,
+            "sort_index": n - 1,
+            "heapify_stack": [],
+        }
 
-    return data
+    phase = execution_state["phase"]
+    build_index = execution_state["build_index"]
+    sort_index = execution_state["sort_index"]
+    heapify_stack = execution_state["heapify_stack"]
+
+    # Fase 1: Construcción del heap
+    if phase == "build_heap":
+        while build_index >= 0:
+            if time.time() - start_time > max_time:
+                return [arr, False, {
+                    "phase": "build_heap",
+                    "build_index": build_index,
+                    "sort_index": sort_index,
+                    "heapify_stack": heapify_stack,
+                }]
+
+            if not heapify_stack:
+                heapify_stack = [(build_index, 0)]
+
+            heapify_stack = heapify_with_stack(arr, n, build_index, heapify_stack)
+            if not heapify_stack:
+                build_index -= 1
+
+        # Cambiar a la fase de ordenamiento
+        execution_state["phase"] = "sort_heap"
+        execution_state["sort_index"] = n - 1
+
+    # Fase 2: Ordenamiento por extracción
+    if phase == "sort_heap":
+        while sort_index > 0:
+            if time.time() - start_time > max_time:
+                return [arr, False, {
+                    "phase": "sort_heap",
+                    "build_index": build_index,
+                    "sort_index": sort_index,
+                    "heapify_stack": heapify_stack,
+                }]
+
+            # Intercambiar la raíz del heap con el último elemento
+            arr[0], arr[sort_index] = arr[sort_index], arr[0]
+            sort_index -= 1  # Reducir el tamaño del heap
+
+            # Restablecer heapify_stack para reordenar el heap restante
+            heapify_stack = [(0, 0)]
+            heapify_stack = heapify_with_stack(arr, sort_index + 1, 0, heapify_stack)
+
+            # Pausa para simular procesamiento
+            time.sleep(.2)
+
+    # Verificar si el arreglo está completamente ordenado
+    is_sorted = all(arr[i] <= arr[i + 1] for i in range(len(arr) - 1))
+    return [arr, is_sorted, None if is_sorted else execution_state]
 
 
 def quickSort(arr, t, stack=None):
