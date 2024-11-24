@@ -23,8 +23,8 @@ def check_time_limit(start_time: float, t: int, sorted_flag: list) -> bool:  # *
 
 
 def controller (data: list):
-    global initialTime
-    initialTime = time.time()
+    # global initialTime
+    # initialTime = time.time()
     op = int(data[0])
     t = int(data[1])
     if op == 1:
@@ -33,8 +33,9 @@ def controller (data: list):
         newData = heapSort(data[2], t)
     elif op == 3:
         newData = quickSort(data[2][0], t, data[2][2]) # quicksort devuelve lista bool stack, requiere array t y stack
-    
+    print(f"New data: {newData}")
     newData = [op, t, newData]
+    
     dataQueue.put(newData)
 
 
@@ -108,6 +109,7 @@ def heapSort(data: list, t: int, start_time: float, sorted_flag: list) -> list: 
 
 
 def quickSort(arr, t, stack=None):
+    print(f"Stack: {stack}")
     start_time = time.time()
     if stack is None:
         stack = [(0, len(arr) - 1)]
@@ -136,7 +138,7 @@ def quickSort(arr, t, stack=None):
 
         stack.append((start, low - 1))
         stack.append((low + 1, end))
-        # time.sleep(.2)
+        time.sleep(.5)
     return [arr, is_sorted, stack]
 
 # Receive Message Method (Secondary Thread)
@@ -147,9 +149,10 @@ def receive_messages(client_socket: "socket.socket") -> None:
             if not message:
                 break
             data = pickle.loads(message)
+            print(f"Data: {data}")
             controller(data)
-            #print(data)
-
+            print("informacion recibida", data)
+            
             #print('<You> ', end = '', flush = True)
     except Exception as ex:
         print(f'Error receiving messages: {ex}')
@@ -168,8 +171,11 @@ def start_client() -> None:
 
     try:
         while True:
+            print("Esperando cola")
             data = dataQueue.get()
+            print("Cola resibida")
             client_socket.sendall(pickle.dumps(data))
+            print("Enviado a server")
     except Exception as ex:
         print(f'Error sending messages: {ex}')
         client_socket.close()
