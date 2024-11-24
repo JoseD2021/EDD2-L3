@@ -7,6 +7,16 @@ SERVER_IP_ADDRESS = CONFIG_PARAMS['SERVER_IP_ADDRESS']
 SERVER_PORT = CONFIG_PARAMS['SERVER_PORT']
 EXIT_MESSAGE = CONFIG_PARAMS['EXIT_MESSAGE']
 
+def read_txt(ruta):
+    try:
+        with open(ruta, 'r') as archivo:
+            lineas = archivo.readlines()
+            vector = [int(linea.strip()) for linea in lineas if linea.strip().isdigit()]
+        return vector
+    except Exception as ex:
+        print(f"Error al leer el archivo: {ex}")
+        return []
+
 # Receive Message Method (Secondary Thread)
 def receive_messages(client_socket: "socket.socket") -> None:
     try:
@@ -22,9 +32,6 @@ def receive_messages(client_socket: "socket.socket") -> None:
     finally:
         client_socket.close()
 
-
-
-datos = "1,2,3,4,5,6,7"
 # Start Client Method (Main Thread)
 def start_client() -> None:
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -42,7 +49,13 @@ def start_client() -> None:
                 client_socket.close()
                 break
             elif message.lower() == "si":
-                client_socket.sendall(bytes(datos, 'utf-8'))
+                ruta_archivo = 'test.txt'
+                vector = read_txt(ruta_archivo)
+                if vector:
+                    datos = ','.join(map(str, vector))
+                    client_socket.sendall(bytes(datos, 'utf-8'))
+                else:
+                    print("No se pudo leer el archivo o está vacío.")
                 continue
             client_socket.sendall(bytes(message, 'utf-8'))
     except Exception as ex:
