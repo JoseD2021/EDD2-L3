@@ -3,7 +3,6 @@ import threading
 import time
 from config import CONFIG_PARAMS
 
-
 # Configuration Parameters
 SERVER_IP_ADDRESS = CONFIG_PARAMS['SERVER_IP_ADDRESS']
 SERVER_PORT = CONFIG_PARAMS['SERVER_PORT']
@@ -18,6 +17,7 @@ def check_time_limit(start_time: float, t: int, sorted_flag: list) -> bool:  # *
         sorted_flag[0] = 0
         return True
     return False
+
 
 def controller(data: str):
     global lock
@@ -58,6 +58,7 @@ def controller(data: str):
         except Exception as e:
             return f"0,Error: {str(e)}"
 
+
 def mergeSort(data: list, t: int, start_time: float, sorted_flag: list) -> list:  # **# Cambio**
     if len(data) <= 1:
         return data
@@ -70,6 +71,7 @@ def mergeSort(data: list, t: int, start_time: float, sorted_flag: list) -> list:
     rightHalf = mergeSort(data[mid:], t, start_time, sorted_flag)  # **# Cambio**
 
     return merge(leftHalf, rightHalf)
+
 
 def merge(left, right) -> list:
     result = []
@@ -87,6 +89,7 @@ def merge(left, right) -> list:
     result.extend(right[j:])
 
     return result
+
 
 def heapSort(data: list, t: int, start_time: float, sorted_flag: list) -> list:  # **# Cambio**
 
@@ -143,6 +146,7 @@ def quickSort(data: list, t: int, start_time: float, sorted_flag: list) -> list:
 
     return sortedLeft + middle + sortedRight
 
+
 # Receive Message Method (Secondary Thread)
 def receive_messages(client_socket: "socket.socket") -> None:
     try:
@@ -154,12 +158,11 @@ def receive_messages(client_socket: "socket.socket") -> None:
             data = message.decode('utf-8')
             response = controller(data)
             print(f"Server response: {response}")  # **# Cambio**
+
     except Exception as ex:
         print(f'Error receiving messages: {ex}')
     finally:
         client_socket.close()
-
-
 
 
 # Start Client Method (Main Thread)
