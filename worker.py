@@ -17,7 +17,7 @@ def controller (data: list):
     op = int(data[0])
     t = int(data[1])
     if op == 1:
-        newData = mergeSort(data[2], t)
+        newData = mergeSort(data[2][0], t, data[2][2])
     elif op == 2:
         newData = heap_sort_with_state(data[2][0], t, data[2][2])
     elif op == 3:
@@ -27,8 +27,37 @@ def controller (data: list):
     
     dataQueue.put(newData)
 
-def mergeSort(arr, t):
-    pass
+def mergeSort(arr, t, args = [1,0]):
+
+    width=args[0]
+    i=args[1]
+     
+    start_time = time.time()
+    n = len(arr)
+    while width < n:
+        while i < n:
+            left = arr[i:i + width]
+            right = arr[i + width:i + 2 * width]
+            merged = []
+            l = r = 0
+            while l < len(left) and r < len(right):
+                if left[l] < right[r]:
+                    merged.append(left[l])
+                    l += 1
+                else:
+                    merged.append(right[r])
+                    r += 1
+            merged.extend(left[l:])
+            merged.extend(right[r:])
+            arr[i:i + 2 * width] = merged
+            i += 2 * width
+            time.sleep(1)
+            if time.time() - start_time > t:
+                return arr, False, [width, i]
+        width *= 2
+        i = 0
+        time.sleep(1)
+    return arr, True, [width, i]
 
 def heapify_with_stack(arr, n, i, heapify_stack):
     while heapify_stack:
@@ -49,9 +78,6 @@ def heapify_with_stack(arr, n, i, heapify_stack):
                 heapify_stack.append((largest, 0))  # Continuar con el subárbol
         else:
             break
-
-        # Pausar brevemente para observar el proceso
-        time.sleep(.001)
 
     return heapify_stack
 
@@ -114,16 +140,12 @@ def heap_sort_with_state(arr, max_time, execution_state=None):
             heapify_stack = [(0, 0)]
             heapify_stack = heapify_with_stack(arr, sort_index + 1, 0, heapify_stack)
 
-            # Pausa para simular procesamiento
-            time.sleep(.001)
-
     # Verificar si el arreglo está completamente ordenado
     is_sorted = all(arr[i] <= arr[i + 1] for i in range(len(arr) - 1))
     return [arr, is_sorted, None if is_sorted else execution_state]
 
 
 def quickSort(arr, t, stack=None):
-    print(f"Stack: {stack}")
     start_time = time.time()
     if stack is None:
         stack = [(0, len(arr) - 1)]
@@ -152,7 +174,6 @@ def quickSort(arr, t, stack=None):
 
         stack.append((start, low - 1))
         stack.append((low + 1, end))
-        time.sleep(.001)
     return [arr, is_sorted, stack]
 
 # Receive Message Method (Secondary Thread)
