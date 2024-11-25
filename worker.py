@@ -10,7 +10,6 @@ SERVER_IP_ADDRESS = CONFIG_PARAMS['SERVER_IP_ADDRESS']
 SERVER_PORT = CONFIG_PARAMS['SERVER_PORT']
 EXIT_MESSAGE = CONFIG_PARAMS['EXIT_MESSAGE']
 
-initialTime = 0
 dataQueue = queue.Queue()
 
 def controller (data: list):
@@ -202,9 +201,9 @@ def start_client() -> None:
 
     try:
         while True:
-            print("\n\nEsperando cola")
+            print("\n\nEsperando...")
             data = dataQueue.get()
-            print("Cola recibida")
+            print("Resultados calculados")
             client_socket.sendall(pickle.dumps(data))
             print("Enviado a server")
     except Exception as ex:

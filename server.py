@@ -4,6 +4,7 @@ from config import CONFIG_PARAMS
 from typing import List
 import pickle
 import queue
+import time
 
 # Configuration Parameters
 IP_ADDRESS = CONFIG_PARAMS['SERVER_IP_ADDRESS']
@@ -13,6 +14,7 @@ LIST_OF_CLIENTS: List["socket.socket"] = []
 LIST_OF_WORKERS: List["socket.socket"] = []
 worker_activo = -1
 resultados = queue.Queue()
+tiempoInicial = 0
 
 # Remove Client from List of Clients
 def remove_client(client_socket: "socket.socket") -> None:
@@ -26,9 +28,13 @@ def broadcastWorker(message: bytes) -> None:
     worker_activo += 1
     if worker_activo >= len(LIST_OF_WORKERS):
         worker_activo = 0
-    LIST_OF_WORKERS[worker_activo].sendall(message)
+    try:
+        LIST_OF_WORKERS[worker_activo].sendall(message)
+    except Exception as ex:
+        LIST_OF_WORKERS[worker_activo].close()
+        remove_client(LIST_OF_WORKERS[worker_activo])
 
-# Attemp to Broadcast a client Message
+# no usado
 def broadcastClient(message: bytes, client_socket: "socket.socket") -> None:
     for client in LIST_OF_CLIENTS:
         if client != client_socket:
@@ -44,22 +50,19 @@ def handle_client(client_socket: "socket.socket", client_address: "socket._RetAd
     try:
         client_socket.sendall(b'Seleccione un metodo de ordenamiento\n1) Mergesort\n2) Heapsort\n3) Quicksort')
         while True:
-            op = client_socket.recv(2048).decode('utf-8')
-            op = int(op)
-            
+            op = int(client_socket.recv(2048).decode('utf-8'))
             if not op:
                 remove_client(client_socket)
                 break
 
             client_socket.sendall(b'Ingrese el tiempo de ejecucion en segundos')
-            t = int(client_socket.recv(2048).decode('utf-8'))
-
+            t = float(client_socket.recv(2048).decode('utf-8'))
             if not t:
                 remove_client(client_socket)
                 break
             
             client_socket.sendall(b'Escriba "si" para enviar los datos')
-            data = client_socket.recv(30000000) # 12288000
+            data = client_socket.recv(30000000) 
 
             if not data:
                 remove_client(client_socket)
@@ -68,6 +71,8 @@ def handle_client(client_socket: "socket.socket", client_address: "socket._RetAd
             data = pickle.loads(data)
             client_socket.sendall(b'Por favor espere, estamos ordenando el vector')
 
+            global tiempoInicial
+            tiempoInicial = time.time()
             message_to_send = pickle.dumps([op,t, [data,t, None]])
             broadcastWorker(message_to_send)
             message_to_send_user = resultados.get()
@@ -91,15 +96,16 @@ def handle_worker(client_socket: "socket.socket", client_address: "socket._RetAd
             message = pickle.loads(message)
             
             if message[2][1] == True:
-                print(f"Lista ordenada {message[2][0]}")
-                message_to_send = bytes(("Tiempo que tomo resolverlo: 0, vector ordenado: "+"str(message[2][0])"),"utf-8")
+                # print(f"Lista ordenada {message[2][0]}")
+                global tiempoInicial
+                message_to_send = bytes(("Vector ordenado: "+str(message[2][0])+"\nTiempo que tomo resolverlo: "+(time.time()-tiempoInicial)+" segundos"),"utf-8")
                 resultados.put(message_to_send) 
             else:
-                print("No se resolvio")
+                print(f"El worker {LIST_OF_WORKERS[worker_activo]} no termino el ordenamiento. Enviando a worker {LIST_OF_WORKERS[worker_activo+1] if worker_activo+1 < len(LIST_OF_WORKERS) else LIST_OF_WORKERS[0]}")
                 message_to_send = pickle.dumps(message)
                 broadcastWorker(message_to_send)
     except Exception as ex:
-        print(f'Error on client {client_address[0]}: {ex}')
+        print(f'Error on worker {client_address[0]}: {ex}')
         remove_client(client_socket)
     finally:
         client_socket.close()
@@ -133,6 +139,8 @@ def start_server() -> None:
         print('Closing the server...')
     finally:
         for client in LIST_OF_CLIENTS:
+            client.close()
+        for client in LIST_OF_WORKERS:
             client.close()
         server_socket.close()
 
