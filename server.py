@@ -21,7 +21,7 @@ def remove_client(client_socket: "socket.socket") -> None:
     if client_socket in LIST_OF_CLIENTS:
         LIST_OF_CLIENTS.remove(client_socket)
     if client_socket in LIST_OF_WORKERS:
-        LIST_OF_CLIENTS.remove(client_socket)
+        LIST_OF_WORKERS.remove(client_socket)
 
 def broadcastWorker(message: bytes) -> None:
     global worker_activo
@@ -96,12 +96,12 @@ def handle_worker(client_socket: "socket.socket", client_address: "socket._RetAd
             message = pickle.loads(message)
             
             if message[2][1] == True:
-                # print(f"Lista ordenada {message[2][0]}")
+                print(f"El worker {client_address[0]} a finalizado el ordenamiento")
                 global tiempoInicial
-                message_to_send = bytes(("Vector ordenado: "+str(message[2][0])+"\nTiempo que tomo resolverlo: "+(time.time()-tiempoInicial)+" segundos"),"utf-8")
+                message_to_send = bytes(("Vector ordenado: "+str(message[2][0])+"\nTiempo que tomo resolverlo: "+str(time.time()-tiempoInicial)+" segundos"),"utf-8")
                 resultados.put(message_to_send) 
             else:
-                print(f"El worker {LIST_OF_WORKERS[worker_activo]} no termino el ordenamiento. Enviando a worker {LIST_OF_WORKERS[worker_activo+1] if worker_activo+1 < len(LIST_OF_WORKERS) else LIST_OF_WORKERS[0]}")
+                print(f"El worker {client_address[0]} no termino el ordenamiento. Enviando al worker {worker_activo+1 if worker_activo+1 < len(LIST_OF_WORKERS) else 0}")
                 message_to_send = pickle.dumps(message)
                 broadcastWorker(message_to_send)
     except Exception as ex:
